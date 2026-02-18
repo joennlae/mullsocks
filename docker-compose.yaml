@@ -2,7 +2,7 @@ services:
   mullsocks:
     build:
       context: .
-    image: ghcr.io/vietanhduong/mullsocks:v0.1.0
+    image: ghcr.io/joennlae/mullsocks:v0.1.0
     cgroup: host
     container_name: mullsocks
     cap_add:
@@ -19,7 +19,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.proxy
-    image: ghcr.io/vietanhduong/mullsocks-proxy:v0.1.0
+    image: ghcr.io/joennlae/mullsocks-proxy:v0.1.0
     container_name: mullsocks-proxy
     restart: unless-stopped
     depends_on:

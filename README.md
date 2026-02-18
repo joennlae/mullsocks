@@ -18,10 +18,10 @@
 
 1. **Clone this repository:**
 ```sh
-git clone https://github.com/vietanhduong/mullsocks.git
+git clone https://github.com/joennlae/mullsocks.git
 cd mullsocks
 # Or
-curl -SLO https://raw.githubusercontent.com/vietanhduong/mullsocks/main/mullsocks.sh && chmod +x ./mullsocks.sh
+curl -SLO https://raw.githubusercontent.com/joennlae/mullsocks/main/mullsocks.sh && chmod +x ./mullsocks.sh
 ```
 
 2. **Start the proxy:**

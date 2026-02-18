@@ -54,8 +54,8 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/vietanhduong/mullsocks:${{ needs.prepare.outputs.version_tag }}
-            ghcr.io/vietanhduong/mullsocks:latest
+            ghcr.io/joennlae/mullsocks:${{ needs.prepare.outputs.version_tag }}
+            ghcr.io/joennlae/mullsocks:latest
           build-args: |
             VERSION=2025.6
           platforms: linux/amd64,linux/arm64
@@ -67,8 +67,8 @@ jobs:
           file: Dockerfile.proxy
           push: true
           tags: |
-            ghcr.io/vietanhduong/mullsocks-proxy:${{ needs.prepare.outputs.version_tag }}
-            ghcr.io/vietanhduong/mullsocks-proxy:latest
+            ghcr.io/joennlae/mullsocks-proxy:${{ needs.prepare.outputs.version_tag }}
+            ghcr.io/joennlae/mullsocks-proxy:latest
           platforms: linux/amd64,linux/arm64
 
   release:

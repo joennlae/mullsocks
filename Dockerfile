@@ -3,7 +3,7 @@ FROM --platform=${BUILDPLATFORM} ubuntu:24.04
 ARG TARGETARCH
 
 LABEL maintainer="Viet-Anh Duong <anhdv.1337@gmail.com>"
-LABEL org.opencontainers.image.source=https://github.com/vietanhduong/mullsocks
+LABEL org.opencontainers.image.source=https://github.com/joennlae/mullsocks
 LABEL org.opencontainers.image.description="A socks5 proxy server for Mullvad VPN."
 LABEL org.opencontainers.image.licenses=MIT
 
