@@ -59,7 +59,7 @@ jobs:
             ghcr.io/joennlae/mullsocks:${{ needs.prepare.outputs.version_tag }}
             ghcr.io/joennlae/mullsocks:latest
           build-args: |
-            VERSION=2025.6
+            VERSION=2025.14
           platforms: linux/amd64,linux/arm64
 
       - name: Build `mullsocks-proxy`

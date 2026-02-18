@@ -10,7 +10,7 @@ LABEL org.opencontainers.image.licenses=MIT
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-ARG VERSION=2025.6
+ARG VERSION=2025.14
 RUN apt-get update -y && apt-get install -y \
   ca-certificates \
   nginx-full \
