@@ -16,6 +16,7 @@ CONFIG_DIR=${MULLVAD_CONFIG_DIR:-"$HOME/.mullsocks"}
 CONTAINER_NAME="mullsocks"
 PROXY_CONTAINER_NAME="mullsocks-proxy"
 NETWORK_NAME="mullsocks_network"
+_CONTAINERS_STARTED=false
 
 function usage() {
   echo "Usage: $script_name [FLAGS]"
@@ -38,6 +39,7 @@ function usage() {
   echo "  -h, --help              Show this help message"
   echo "      --config-dir        Directory for mullsocks configuration (default: '$CONFIG_DIR')"
   echo "      --stop              Stop the mullsocks container"
+  echo "      --list              List all available relay locations"
   echo "  -a, --account           Mullvad account number"
   echo "  -p, --port              Port to use for the SOCKS5 proxy (default: $PORT)"
   echo "  -l, --location          Mullvad server location. Use quotes for multiple words (e.g., 'hk hkg') (default: '$LOCATION')"
@@ -53,6 +55,21 @@ function parse_args() {
     --stop)
       docker stop "$CONTAINER_NAME" "$PROXY_CONTAINER_NAME" 2>/dev/null || true
       docker network rm "$NETWORK_NAME" 2>/dev/null || true
+      exit 0
+      ;;
+    --list)
+      if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+        docker exec "$CONTAINER_NAME" mullvad relay list
+      else
+        docker run --rm --cgroupns host \
+          --cap-add NET_ADMIN \
+          --cap-add SYS_MODULE \
+          --sysctl net.ipv4.conf.all.src_valid_mark=1 \
+          --privileged \
+          --entrypoint bash \
+          "$MULLSOCKS_IMAGE" -c \
+          "mullvad-daemon &>/dev/null & until mullvad status &>/dev/null 2>&1; do sleep 1; done; mullvad relay list"
+      fi
       exit 0
       ;;
     --container)
@@ -98,7 +115,7 @@ function ensure_containers() {
   # Ensure the main container is running
   if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
     echo "Container '$CONTAINER_NAME' not found. Starting it..."
-    docker run -d --cgroupns host \
+    docker run --cgroupns host \
       --cap-add NET_ADMIN \
       --cap-add SYS_MODULE \
       --sysctl net.ipv4.conf.all.src_valid_mark=1 \
@@ -106,24 +123,27 @@ function ensure_containers() {
       --network "$NETWORK_NAME" \
       --network-alias "$CONTAINER_NAME" \
       --volume "$CONFIG_DIR":/etc/mullvad \
-      --name "$CONTAINER_NAME" --rm "$MULLSOCKS_IMAGE" || {
+      --name "$CONTAINER_NAME" --rm "$MULLSOCKS_IMAGE" &
+    _CONTAINERS_STARTED=true
+    if [[ $? -ne 0 ]]; then
       echo "Failed to start the $CONTAINER_NAME container. Please check your Docker setup." >&2
       exit 1
-    }
+    fi
   fi
 
   # Ensure the proxy container is running
   if ! docker ps --format '{{.Names}}' | grep -q "^${PROXY_CONTAINER_NAME}$"; then
     echo "Container '$PROXY_CONTAINER_NAME' not found. Starting it..."
-    docker run -d \
+    docker run \
       --network "$NETWORK_NAME" \
       --network-alias "$PROXY_CONTAINER_NAME" \
       --name "$PROXY_CONTAINER_NAME" --rm \
       -p "$PORT":1080 \
-      "$MULLSOCKS_PROXY_IMAGE" || {
+      "$MULLSOCKS_PROXY_IMAGE" &
+    if [[ $? -ne 0 ]]; then
       echo "Failed to start the $PROXY_CONTAINER_NAME container. Please check your Docker setup." >&2
       exit 1
-    }
+    fi
   fi
 }
 
@@ -182,11 +202,10 @@ if [ "$ACCOUNT" != "$CURRENT_ACCOUNT" ]; then
     exit 1
   }
 
-  docker exec -it "$CONTAINER_NAME" bash -c "mullvad relay set tunnel-protocol wireguard"
-  docker exec -it "$CONTAINER_NAME" bash -c "mullvad lockdown-mode set on"
-  docker exec -it "$CONTAINER_NAME" bash -c "mullvad lan set allow"
+  docker exec -it "$CONTAINER_NAME" bash -c "mullvad lockdown-mode set false"
+  # docker exec -it "$CONTAINER_NAME" bash -c "mullvad lan set allow"
   docker exec -it "$CONTAINER_NAME" bash -c "mullvad auto-connect set on"
-  docker exec -it "$CONTAINER_NAME" bash -c "mullvad tunnel set wireguard rotate-key"
+  # docker exec -it "$CONTAINER_NAME" bash -c "mullvad tunnel set wireguard rotate-key"
 fi
 
 # Set the location
@@ -195,7 +214,7 @@ docker exec -it "$CONTAINER_NAME" bash -c "mullvad relay set location $LOCATION"
   exit 1
 }
 
-docker exec -it "$CONTAINER_NAME" bash -c "mullvad reconnect --wait" || {
+docker exec -it "$CONTAINER_NAME" bash -c "mullvad connect --wait" || {
   echo "Failed to connect to the Mullvad server. Please check your connection." >&2
   exit 1
 }
@@ -205,3 +224,9 @@ echo "  Account: $ACCOUNT"
 echo "  Location: $LOCATION"
 echo "  Port: $PORT"
 echo "You can now use the SOCKS5 proxy at 'socks5://localhost:$PORT'."
+
+if [[ "$_CONTAINERS_STARTED" == "true" ]]; then
+  trap 'echo ""; echo "Shutting down mullsocks..."; docker stop "$CONTAINER_NAME" "$PROXY_CONTAINER_NAME" 2>/dev/null; docker network rm "$NETWORK_NAME" 2>/dev/null' INT TERM
+  echo "Press Ctrl+C to stop."
+  wait
+fi
