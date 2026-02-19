@@ -203,10 +203,12 @@ if [ "$ACCOUNT" != "$CURRENT_ACCOUNT" ]; then
   }
 
   docker exec -it "$CONTAINER_NAME" bash -c "mullvad lockdown-mode set false"
-  docker exec -it "$CONTAINER_NAME" bash -c "mullvad lan set allow"
   docker exec -it "$CONTAINER_NAME" bash -c "mullvad auto-connect set on"
   # docker exec -it "$CONTAINER_NAME" bash -c "mullvad tunnel set wireguard rotate-key"
 fi
+
+# Always ensure LAN sharing is allowed so the proxy container can reach mullsocks
+docker exec -it "$CONTAINER_NAME" bash -c "mullvad lan set allow"
 
 # Set the location
 docker exec -it "$CONTAINER_NAME" bash -c "mullvad relay set location $LOCATION" || {
@@ -223,7 +225,8 @@ echo "Mullsocks is now running with the following configuration:"
 echo "  Account: $ACCOUNT"
 echo "  Location: $LOCATION"
 echo "  Port: $PORT"
-echo "You can now use the SOCKS5 proxy at 'socks5h://mullsocks:$PORT'."
+echo "From the host:            socks5h://localhost:$PORT"
+echo "From a Docker container:  socks5h://mullsocks:$PORT (attach to network '$NETWORK_NAME')"
 
 if [[ "$_CONTAINERS_STARTED" == "true" ]]; then
   trap 'echo ""; echo "Shutting down mullsocks..."; docker stop "$CONTAINER_NAME" "$PROXY_CONTAINER_NAME" 2>/dev/null; docker network rm "$NETWORK_NAME" 2>/dev/null' INT TERM

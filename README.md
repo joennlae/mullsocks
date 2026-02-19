@@ -55,7 +55,8 @@ Flags:
 ## How It Works
 
 - The script launches a Docker container configured with Mullvad VPN and exposes a local SOCKS5 proxy.
-- Set your application to use `mullsocks:<port>` as a SOCKS5 proxy (using `socks5h://`), and its traffic will route via Mullvad.
+- **From the host**: use `socks5h://localhost:<port>` (default port `1080`).
+- **From another Docker container**: attach it to the `mullsocks_network` network and use `socks5h://mullsocks:<port>`.
 - You don’t need to change your system’s whole network routing.
 
 ## License
