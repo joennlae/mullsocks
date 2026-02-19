@@ -4,7 +4,7 @@ set -euo pipefail
 
 script_name="$(basename "${BASH_SOURCE[0]}")"
 
-MULLSOCKS_VERSION="v0.1.3"
+MULLSOCKS_VERSION="v0.1.5"
 
 MULLSOCKS_IMAGE=${MULLSOCKS_IMAGE:-"ghcr.io/joennlae/mullsocks:$MULLSOCKS_VERSION"}
 MULLSOCKS_PROXY_IMAGE=${MULLSOCKS_PROXY_IMAGE:-"ghcr.io/joennlae/mullsocks-proxy:$MULLSOCKS_VERSION"}
